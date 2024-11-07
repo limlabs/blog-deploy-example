@@ -1,36 +1,116 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+## Deployment Architecture Example
 
-## Getting Started
+In this example, we will write an app in NextJS to illustrate a multi-environment development workflow. Our design includes a database (Postgres) and file uploads to help make things more realistic.
 
-First, run the development server:
+## App Design
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+Our app will be a simple blog with the following features:
+
+- Form for storing a blog post with the following fields:
+   - **Title** - String containing post title
+   - **Thumbnail** - Accepts a local image file to be uploaded
+   - **Content** - Textarea that takes markdown and renders it
+- In our app, the blog author will be using the form to manage posts. They will not be checked into source control (e.g. not a static site)
+
+## Architecture
+
+```mermaid
+flowchart TD
+ 
+  subgraph ProdEnvironment[Prod Environment]
+    D[Vercel App] --> E[Production Postgres]
+    D --> F[Production Blob Storage]
+  end
+  
+  subgraph PreviewEnvironment[Preview Environment]
+    G[Preview App] --> H[Preview Postgres]
+    G --> I[Preview Blob Storage]
+  end
+
+  subgraph DevEnvironment[Dev Environment]
+    A[Developer Machine] --> B["Local Postgres (Docker)"]
+    A --> C[Local filesystem]
+  end
+
+  DevEnvironment -- git push --> PreviewEnvironment
+  PreviewEnvironment -- merge to main --> ProdEnvironment
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Environments
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+In this model, we will have three environment types:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. **Local** - what developers use when running on their local laptop. 
+2. **Preview** - what reviewers see when viewing code that has been pushed to a branch other than our production branch.
+3. **Production** - what end users will see. In our example, this gets updated automatically whenever a merge to `main` happens.
 
-## Learn More
+### Infrastructure Components
 
-To learn more about Next.js, take a look at the following resources:
+#### Database
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+For storing the blog posts, we will use Postgres. Postgres has a number of advantages compared to other data stores:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- High-performance query engine
+- Scales to large data sets
+- JSON, vector, and other storage types
+- Several managed services make maintenance simple
 
-## Deploy on Vercel
+Locally, we will use Docker to run a copy of Postgres that "just works" with the config in this example. 
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+In Preview and Production environments, we will use Vercel Postgres, which offers an extremely simple way to manage the Postgres database. They handle scaling and security updates, making it easier to focus on building and maintaining your app.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+#### Media Storage
+
+For storing the thumbnails that accompany each post, a different data store is more appropriate. Typically media and other binary assets are stored in a "blob" storage solution, such as Amazon S3. These blob stores are managed by cloud providers, and offer high read scalability and can store large amounts of data affordably.
+
+In our case, we will be using Vercel Blob storage. We chose this to keep the number of cloud vendors and integrations low. This pattern however can work just as well with another cloud storage provider like AWS, GCP or Azure.
+
+To simplify the local development experience, we will include an alternate implementation for storage that depends on the local filesystem. This makes it simple to run `pnpm dev` without any extra setup or authentication.
+
+## What you'll need
+
+- Docker
+- NodeJS 20 or later
+
+## Steps
+
+### 1. Create a new project
+
+Clone this repository, and run `pnpm install`
+
+### 1. Setting up a local environment
+
+First we'll get a local Postgres database instance running. To make this simpler, we have included a `docker-compose.yml` that starts a new local copy of Postgres on port 5432. 
+
+This can be started in the background via this command:
+
+```
+docker compose up -d
+```
+
+Once the database is running, you can test out the connection is working with the following:
+
+```bash
+PGPASSWORD=postgres psql -h localhost -U postgres -d blog -c '\l'
+```
+
+### 2. Create dev database with Prisma postgres
+
+Go sign up here
+
+Run this command to s
+
+### 3. Update your Vercel environment variables
+
+### 4. Create a dev blob store with Vercel postgres
+
+### 5. Update your Vercel environment variables
+
+### 6. Create production resources
+
+### 7. Update Vercel environment variables
+
+
+Ideas
+
+- Migrations - separate topic, but comes up a lot: when / how should you run migrations? When app starts up? As a separate script? Does it go in GH Actions or do you run it from your laptop? etc.
