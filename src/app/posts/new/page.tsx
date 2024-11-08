@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/db";
 import { PostForm } from "@/components/postForm";
 import { redirect } from "next/navigation";
-import { uploadPostThumbnail } from "@/lib/postThumbnail";
+import { uploadPostCoverImage } from "@/lib/postCoverImage";
 
 export default function NewPostPage() {
   return (
@@ -10,25 +10,26 @@ export default function NewPostPage() {
       <PostForm onSubmit={async (data) => {
         "use server";
 
-        const { title, content, thumbnail } = data;
+        const { title, content, description, coverImage } = data;
         
         const post = await prisma.post.create({
           data: {
             title,
             content,
-            thumbnailUrl: null,
+            description,
+            coverImageUrl: null,
           }
         });
 
-        if (thumbnail) {
+        if (coverImage) {
           console.log("Uploading file");
-          const thumbnailUrl = await uploadPostThumbnail(post.id, thumbnail);
+          const coverImageUrl = await uploadPostCoverImage(post.id, coverImage);
 
           await prisma.post.update({
             where: {
               id: post.id,
             },
-            data: { thumbnailUrl },
+            data: { coverImageUrl },
           });
         }
 

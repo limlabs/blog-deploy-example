@@ -4,7 +4,8 @@ import { prisma } from "@/lib/db"
 import { PostForm } from "@/components/postForm";
 import { notFound, redirect } from "next/navigation";
 import { Prisma } from "@prisma/client";
-import { uploadPostThumbnail } from "@/lib/postThumbnail";
+import { uploadPostCoverImage } from "@/lib/postCoverImage";
+import { media } from "@/lib/mediaStorage";
 
 export default async function EditPostPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -24,18 +25,23 @@ export default async function EditPostPage({ params }: { params: Promise<{ id: s
       <PostForm 
         initialContent={post.content ?? ''}
         initialTitle={post.title} 
-        initialThumbnailUrl={post.thumbnailUrl ?? ''}
+        initialCoverImageUrl={post.coverImageUrl ?? ''}
+        initialCoverImageFilename={post.coverImageUrl ? media.getMediaFilename(post.coverImageUrl) : ''}
+        initialDescription={post.description ?? ''}
         onSubmit={async (data) => {
           "use server";
 
-          const { title, content, thumbnail } = data;
-          let updates: Prisma.PostUpdateInput = { title, content };
+          const { title, content, description, coverImage } = data;
+          let updates: Prisma.PostUpdateInput = { 
+            title,
+            content,
+            description,
+          };
   
-          if (thumbnail) {
-            console.log("Uploading file");
-            const thumbnailUrl = await uploadPostThumbnail(post.id, thumbnail);
+          if (coverImage) {
+            const coverImageUrl = await uploadPostCoverImage(post.id, coverImage);
 
-            updates = { ...updates, thumbnailUrl };
+            updates = { ...updates, coverImageUrl };
           }
           
           await prisma.post.update({

@@ -8,9 +8,14 @@ Our app will be a simple blog with the following features:
 
 - Form for storing a blog post with the following fields:
    - **Title** - String containing post title
-   - **Thumbnail** - Accepts a local image file to be uploaded
+   - **Description** - Used for content preview, such as from home page cards, or search results
+   - **Cover Image** - Accepts a local image file to be uploaded
    - **Content** - Textarea that takes markdown and renders it
-- In our app, the blog author will be using the form to manage posts. They will not be checked into source control (e.g. not a static site)
+   - **Created Date** - Date/time the blog post was created
+   - **Updated Date** - Date/time the blog post was last updated
+- In our app, the blog author will be using the live app to manage posts. They will not be checked into source control (e.g. not a static site)
+- We will not cover authentication in this example
+
 
 ## Architecture
 
@@ -61,7 +66,7 @@ In Preview and Production environments, we will use Vercel Postgres, which offer
 
 #### Media Storage
 
-For storing the thumbnails that accompany each post, a different data store is more appropriate. Typically media and other binary assets are stored in a "blob" storage solution, such as Amazon S3. These blob stores are managed by cloud providers, and offer high read scalability and can store large amounts of data affordably.
+For storing the cover images that accompany each post, a different data store is more appropriate. Typically media and other binary assets are stored in a "blob" storage solution, such as Amazon S3. These blob stores are managed by cloud providers, and offer high read scalability and can store large amounts of data affordably.
 
 In our case, we will be using Vercel Blob storage. We chose this to keep the number of cloud vendors and integrations low. This pattern however can work just as well with another cloud storage provider like AWS, GCP or Azure.
 

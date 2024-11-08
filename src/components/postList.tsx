@@ -27,11 +27,11 @@ export const PostList = ({ posts }: { posts: Post[] }) => {
       {posts.map((post) => (
         <Card key={post.id}>
           <CardHeader>
-            {post.thumbnailUrl && (
+            {post.coverImageUrl && (
               <div className="relative w-full h-44 mb-4">
                 <Image
-                  src={post.thumbnailUrl}
-                  alt={`Thumbnail for ${post.title}`}
+                  src={post.coverImageUrl}
+                  alt={`Cover image for ${post.title}`}
                   fill
                   className="object-cover rounded-t-lg"
                 />

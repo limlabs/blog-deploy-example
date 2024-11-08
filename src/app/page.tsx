@@ -4,7 +4,10 @@ import Link from "next/link";
 import { PostList } from "@/components/postList";
 
 export default async function Home() {
-  const recentPosts = await prisma.post.findMany({ take: 3, orderBy: { updatedAt: "desc" } });
+  const recentPosts = await prisma.post.findMany({
+    take: 3,
+    orderBy: { updatedAt: "desc" },
+  });
 
   return (
     <div className="space-y-12">
@@ -18,9 +21,11 @@ export default async function Home() {
       <section>
         <h2 className="text-3xl font-bold mb-6">Recent Posts</h2>
         <PostList posts={recentPosts} />
-        <Button asChild className="mt-6">
-          <Link href="/posts">Read All Posts</Link>
-        </Button>
+        {recentPosts.length > 0 && (
+          <Button asChild className="mt-6">
+            <Link href="/posts">Read All Posts</Link>
+          </Button>
+        )}
       </section>
     </div>
   );

@@ -16,37 +16,43 @@ import { useState } from "react";
 
 export const formSchema = z.object({
   title: z.string().min(1),
+  description: z.string().min(1),
   content: z.string().min(1),
-  thumbnail: z.any(),
+  coverImage: z.any(),
 });
 
 export const PostForm = ({
   onSubmit,
   initialTitle = "",
+  initialDescription = "",
   initialContent = "",
-  initialThumbnailUrl = "",
+  initialCoverImageUrl = "",
 }: {
   onSubmit: (data: z.infer<typeof formSchema>) => void;
   initialTitle?: string;
+  initialDescription?: string;
   initialContent?: string;
-  initialThumbnailUrl?: string;
+  initialCoverImageUrl?: string;
+  initialCoverImageFilename?: string;
 }) => {
   const form = useForm<z.infer<typeof formSchema>>({
     defaultValues: {
       title: initialTitle,
       content: initialContent,
+      description: initialDescription,
     },
   });
 
-  const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(
-    initialThumbnailUrl
+  const [coverImageUrl, setCoverImageUrl] = useState<string | null>(
+    initialCoverImageUrl
   );
-  const [thumbnail, setThumbnail] = useState<File | null>(null);
+
+  const [coverImage, setCoverImage] = useState<File | null>(null);
 
   const handleSubmit = form.handleSubmit(async (data) => {
     await onSubmit({
       ...data,
-      thumbnail,
+      coverImage,
     });
   });
 
@@ -65,8 +71,20 @@ export const PostForm = ({
             </FormItem>
           )}
         />
+        <FormField
+          control={form.control}
+          name="description"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Description</FormLabel>
+              <FormControl>
+                <Input {...field} />
+              </FormControl>
+            </FormItem>
+          )}
+        />
         <FormItem>
-          <FormLabel>Thumbnail</FormLabel>
+          <FormLabel>Cover Image</FormLabel>
           <FormControl>
             <Input
               type="file"
@@ -76,12 +94,12 @@ export const PostForm = ({
                   return;
                 }
 
-                setThumbnail(file);
+                setCoverImage(file);
 
                 const reader = new FileReader();
                 reader.onload = async () => {
                   const dataUrl = reader.result as string;
-                  setThumbnailUrl(dataUrl);
+                  setCoverImageUrl(dataUrl);
                 };
 
                 reader.readAsDataURL(file);
@@ -89,7 +107,7 @@ export const PostForm = ({
             />
           </FormControl>
         </FormItem>
-        {thumbnailUrl && <img src={thumbnailUrl} alt="Thumbnail" />}
+        {coverImageUrl && <img src={coverImageUrl} alt="Thumbnail of blog post cover image" />}
         <FormField
           control={form.control}
           name="content"
