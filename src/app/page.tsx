@@ -1,8 +1,9 @@
 import { Post } from "@prisma/client";
 import { prisma } from "./db";
-import { Converter } from "showdown";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
-const converter = new Converter();
+
 
 const PostsList = ({ posts }: { posts: Post[] }) => {
   if (posts.length === 0) {
@@ -10,18 +11,18 @@ const PostsList = ({ posts }: { posts: Post[] }) => {
   }
 
   return (
-    <ul>
-      {posts.map((post) => (
-          <li key={post.id}>
-            <h2>{post.title}</h2>
-            <div
-              dangerouslySetInnerHTML={{
-                __html: converter.makeHtml(post.content ?? ''),
-              }}
-            />
-          </li>
-        ))}
-    </ul>
+    <div>
+      <Button asChild>
+        <Link href="/posts/new">New Post</Link>
+      </Button>
+      <ul>
+        {posts.map((post) => (
+            <li key={post.id}>
+              <Link href={`/posts/${post.id}`}>{post.title}</Link>
+            </li>
+          ))}
+      </ul>
+    </div>
   )
 }
 
