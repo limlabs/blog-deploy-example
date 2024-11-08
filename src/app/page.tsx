@@ -1,5 +1,5 @@
 import { Post } from "@prisma/client";
-import { prisma } from "./db";
+import { prisma } from "../lib/db";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 

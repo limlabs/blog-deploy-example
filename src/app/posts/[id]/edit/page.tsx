@@ -1,6 +1,6 @@
 
 
-import { prisma } from "@/app/db"
+import { prisma } from "@/lib/db"
 import { PostForm } from "@/components/postForm";
 import { notFound, redirect } from "next/navigation";
 
