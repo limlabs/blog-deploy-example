@@ -6,7 +6,7 @@ import { uploadPostThumbnail } from "@/lib/postThumbnail";
 export default function NewPostPage() {
   return (
     <div>
-      <h1>New Post</h1>
+      <h1 className="text-3xl font-bold mb-6">New Post</h1>
       <PostForm onSubmit={async (data) => {
         "use server";
 

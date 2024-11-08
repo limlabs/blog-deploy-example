@@ -1,38 +1,27 @@
-import { Post } from "@prisma/client";
 import { prisma } from "../lib/db";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-
-
-
-const PostsList = ({ posts }: { posts: Post[] }) => {
-  if (posts.length === 0) {
-    return <p>No posts were found.</p>;
-  }
-
-  return (
-    <div>
-      <Button asChild>
-        <Link href="/posts/new">New Post</Link>
-      </Button>
-      <ul>
-        {posts.map((post) => (
-            <li key={post.id}>
-              <Link href={`/posts/${post.id}`}>{post.title}</Link>
-            </li>
-          ))}
-      </ul>
-    </div>
-  )
-}
+import { PostList } from "@/components/postList";
 
 export default async function Home() {
-  const posts = await prisma.post.findMany();
+  const recentPosts = await prisma.post.findMany({ take: 3, orderBy: { updatedAt: "desc" } });
 
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <h1>Posts</h1>
-      <PostsList posts={posts} />
+    <div className="space-y-12">
+      <section className="text-center">
+        <h1 className="text-4xl font-bold mb-4">Welcome to My Blog</h1>
+        <p className="text-xl text-muted-foreground mb-6">
+          Exploring the world of web development, one post at a time.
+        </p>
+      </section>
+
+      <section>
+        <h2 className="text-3xl font-bold mb-6">Recent Posts</h2>
+        <PostList posts={recentPosts} />
+        <Button asChild className="mt-6">
+          <Link href="/posts">Read All Posts</Link>
+        </Button>
+      </section>
     </div>
   );
 }
