@@ -13,12 +13,12 @@ import {
 export const PostList = ({ posts }: { posts: Post[] }) => {
   if (!posts.length) {
     return (
-      <p>
-        No posts found.
-        <Button asChild>
+      <>
+        <p>No posts found.</p>
+        <Button asChild className="mt-4">
           <Link href="/posts/new">Create a new post</Link>
         </Button>
-      </p>
+      </>
     );
   }
 

@@ -98,17 +98,21 @@ PGPASSWORD=postgres psql -h localhost -U postgres -d blog -c '\l'
 
 Go sign up here
 
-Run this command to s
+Run this command to initialize your local database with the prisma schema for this app:
 
-### 3. Update your Vercel environment variables
+```
+pnpm dlx prisma migrate dev
+```
 
-### 4. Create a dev blob store with Vercel postgres
+### 3. Start the app
 
-### 5. Update your Vercel environment variables
+Make sure the app works locally before going further.
 
-### 6. Create production resources
+```
+pnpm dev
+```
 
-### 7. Update Vercel environment variables
+Then go to http://localhost:3000 and try creating, updating, and viewing posts.
 
 
 Ideas
