@@ -1,7 +1,7 @@
-import "./globals.css";
 import Link from "next/link";
 import { Inter } from "next/font/google";
-import { Button } from "@/components/ui/button";
+import { UserCircle, PenSquare } from "lucide-react";
+
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -9,7 +9,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuItem,
 } from "@radix-ui/react-dropdown-menu";
-import { UserCircle, PenSquare } from "lucide-react";
+import { Button } from "@/components/ui/button";
+
+import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
 

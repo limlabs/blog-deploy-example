@@ -1,5 +1,6 @@
-import { PostList } from "@/components/postList";
 import { prisma } from "@/lib/db";
+
+import { PostList } from "@/components/post-list";
 
 export default async function AllPostsPage() {
   const posts = await prisma.post.findMany({ orderBy: { updatedAt: "desc" } });

@@ -1,4 +1,7 @@
 "use client";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import z from "zod";
 
 import {
   Form,
@@ -9,10 +12,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { useForm } from "react-hook-form";
-import z from "zod";
-import { Button } from "./ui/button";
-import { useState } from "react";
+import { Button } from "@/components/ui/button";
 
 export const formSchema = z.object({
   title: z.string().min(1),
@@ -107,7 +107,9 @@ export const PostForm = ({
             />
           </FormControl>
         </FormItem>
-        {coverImageUrl && <img src={coverImageUrl} alt="Thumbnail of blog post cover image" />}
+        {coverImageUrl && (
+          <img src={coverImageUrl} alt="Thumbnail of blog post cover image" />
+        )}
         <FormField
           control={form.control}
           name="content"
