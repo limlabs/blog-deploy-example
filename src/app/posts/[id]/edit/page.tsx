@@ -5,8 +5,8 @@ import { Prisma } from "@prisma/client";
 import { PostForm } from "@/components/post-form";
 
 import { prisma } from "@/lib/db";
-import { uploadPostCoverImage } from "@/lib/postCoverImage";
-import { media } from "@/lib/mediaStorage";
+import { uploadPostCoverImage } from "@/lib/post-cover-image";
+import { media } from "@/lib/media-storage";
 
 export default async function EditPostPage({
   params,

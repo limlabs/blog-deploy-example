@@ -4,7 +4,7 @@ import { prisma } from "@/lib/db";
 
 import { PostForm } from "@/components/post-form";
 
-import { uploadPostCoverImage } from "@/lib/postCoverImage";
+import { uploadPostCoverImage } from "@/lib/post-cover-image";
 
 export default function NewPostPage() {
   return (

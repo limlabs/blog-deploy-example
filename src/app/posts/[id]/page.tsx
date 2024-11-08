@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
-import { Converter } from "showdown";
+import Markdown from "react-markdown";
 import { ArrowLeft, Edit } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -9,8 +9,6 @@ import { Button } from "@/components/ui/button";
 import { prisma } from "@/lib/db";
 
 import styles from "@/styles/markdown.module.css";
-
-const converter = new Converter();
 
 export default async function PostPage({
   params,
@@ -65,12 +63,7 @@ export default async function PostPage({
         Published on {new Date(post.updatedAt).toLocaleDateString()}
       </div>
       <div className="prose prose-lg dark:prose-invert max-w-none">
-        <div
-          className={styles.markdown}
-          dangerouslySetInnerHTML={{
-            __html: converter.makeHtml(post.content ?? ""),
-          }}
-        />
+        <Markdown className={styles.markdown}>{post.content ?? ""}</Markdown>
       </div>
     </article>
   );
