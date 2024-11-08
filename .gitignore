@@ -41,3 +41,6 @@ next-env.d.ts
 
 # data from local postgres
 /data
+
+# data from local uploads
+public/media
