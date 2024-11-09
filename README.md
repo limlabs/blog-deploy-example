@@ -218,3 +218,9 @@ Instead, we will use Vercel's Blob Storage to handle this duty.
 
 If you've gotten this far, congrats! All of our storage resources are now set up, with a dedicated instance for both previews and production.
 
+### 4. Configure Hosting and Deployments
+
+1. Make sure the repo you cloned in the first section is pushed
+1. Go to the Vercel Dashboard
+2. Click "Add"
+3. Import the 
