@@ -5,6 +5,8 @@ import { PostList } from "@/components/post-list";
 
 import { prisma } from "@/lib/db";
 
+export const dynamic = 'force-dynamic';
+
 export default async function Home() {
   const recentPosts = await prisma.post.findMany({
     take: 3,
