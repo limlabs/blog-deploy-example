@@ -6,7 +6,6 @@ import { PostForm } from "@/components/post-form";
 
 import { prisma } from "@/lib/db";
 import { uploadPostCoverImage } from "@/lib/post-cover-image";
-import { media } from "@/lib/media-storage";
 
 export default async function EditPostPage({
   params,
@@ -31,9 +30,6 @@ export default async function EditPostPage({
         initialContent={post.content ?? ""}
         initialTitle={post.title}
         initialCoverImageUrl={post.coverImageUrl ?? ""}
-        initialCoverImageFilename={
-          post.coverImageUrl ? media.getMediaFilename(post.coverImageUrl) : ""
-        }
         initialDescription={post.description ?? ""}
         onSubmit={async (data) => {
           "use server";

@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@vercel/blob": "0.26.0",
     "@hookform/resolvers": "^3.9.1",
     "@prisma/client": "5.22.0",
     "@prisma/extension-accelerate": "1.2.1",
@@ -32,6 +33,7 @@
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
+    "@dotenvx/dotenvx": "1.22.0",
     "eslint": "^8",
     "eslint-config-next": "15.0.3",
     "postcss": "^8",

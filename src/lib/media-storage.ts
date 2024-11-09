@@ -1,43 +1,29 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import { put } from '@vercel/blob'
 
 export interface MediaStorageProvider {
-  getMediaFilename: (url: string) => string;
-  getMediaURL: (destinationPath: string) => string;
-  upload: (destinationPath: string, data: Buffer) => Promise<void>;
-  delete: (url: string) => Promise<void>;
+  upload: (destinationPath: string, data: Buffer) => Promise<{ url: string }>;
 }
 
 const localStoragePath = "public/media";
 
 const localStorageProvider: MediaStorageProvider = {
-  getMediaFilename: (url) => {
-    const basename = path.basename(url);
-    const [, , /* postId */ /* timestamp */ ...filenameParts] =
-      basename.split("__");
-    if (!filenameParts) {
-      return basename;
-    }
-
-    const filename = filenameParts.join("__");
-    return filename;
-  },
-  getMediaURL: (destinationPath: string) => {
-    return `/media/${destinationPath}`;
-  },
   upload: async (destinationPath, data) => {
     const outputPath = path.join(localStoragePath, destinationPath);
     const dirname = path.dirname(outputPath);
 
     await fs.mkdir(dirname, { recursive: true });
     await fs.writeFile(outputPath, data);
-  },
-  delete: async (destinationPath) => {
-    const deletePath = path.join(localStoragePath, destinationPath);
-
-    await fs.unlink(deletePath);
-  },
+    return { url: `/media/${destinationPath}` };
+  }
 };
 
-// We will add a Blob storage provider soon
-export const media = localStorageProvider;
+const blobStorageProvider: MediaStorageProvider = {
+  upload: async function (destinationPath: string, data: Buffer) {
+    return put(destinationPath, data, { access: 'public'});
+  },
+}
+
+const defaultStorageProvider = process.env.BLOB_READ_WRITE_TOKEN ? blobStorageProvider : localStorageProvider;
+export const media = defaultStorageProvider;
