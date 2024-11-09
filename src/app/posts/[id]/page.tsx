@@ -1,14 +1,14 @@
-import styles from "@/styles/markdown.module.css";
-
-import { prisma } from "@/lib/db";
-import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
-
-import { Converter } from "showdown";
+import Markdown from "react-markdown";
 import { ArrowLeft, Edit } from "lucide-react";
-const converter = new Converter();
+
+import { Button } from "@/components/ui/button";
+
+import { prisma } from "@/lib/db";
+
+import styles from "@/styles/markdown.module.css";
 
 export default async function PostPage({
   params,
@@ -37,7 +37,7 @@ export default async function PostPage({
         </Button>
         <Button variant="outline" asChild>
           <Link href={`/posts/${post.id}/edit`} className="flex items-center">
-          <Edit />
+            <Edit />
             Edit Post
           </Link>
         </Button>
@@ -54,17 +54,16 @@ export default async function PostPage({
         </div>
       )}
       <h1 className="text-4xl font-bold mb-2">{post.title}</h1>
-      {post.description && <p className="text-2xl text-muted-foreground mb-4">{post.description}</p>}
+      {post.description && (
+        <p className="text-2xl text-muted-foreground mb-4">
+          {post.description}
+        </p>
+      )}
       <div className="flex items-center text-muted-foreground mb-2">
         Published on {new Date(post.updatedAt).toLocaleDateString()}
       </div>
       <div className="prose prose-lg dark:prose-invert max-w-none">
-        <div
-          className={styles.markdown}
-          dangerouslySetInnerHTML={{
-            __html: converter.makeHtml(post.content ?? ""),
-          }}
-        />
+        <Markdown className={styles.markdown}>{post.content ?? ""}</Markdown>
       </div>
     </article>
   );

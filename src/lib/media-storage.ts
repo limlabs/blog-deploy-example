@@ -1,5 +1,5 @@
-import fs from "fs/promises";
-import path from "path";
+import fs from "node:fs/promises";
+import path from "node:path";
 
 export interface MediaStorageProvider {
   getMediaFilename: (url: string) => string;
@@ -13,11 +13,12 @@ const localStoragePath = "public/media";
 const localStorageProvider: MediaStorageProvider = {
   getMediaFilename: (url) => {
     const basename = path.basename(url);
-    const [/* postId */, /* timestamp */, ...filenameParts] = basename.split("__");
+    const [, , /* postId */ /* timestamp */ ...filenameParts] =
+      basename.split("__");
     if (!filenameParts) {
       return basename;
     }
-    
+
     const filename = filenameParts.join("__");
     return filename;
   },

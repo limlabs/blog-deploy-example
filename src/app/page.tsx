@@ -1,7 +1,9 @@
-import { prisma } from "../lib/db";
-import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { PostList } from "@/components/postList";
+
+import { Button } from "@/components/ui/button";
+import { PostList } from "@/components/post-list";
+
+import { prisma } from "@/lib/db";
 
 export default async function Home() {
   const recentPosts = await prisma.post.findMany({

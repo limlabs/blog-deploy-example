@@ -7,26 +7,25 @@ In this example, we will write an app in NextJS to illustrate a multi-environmen
 Our app will be a simple blog with the following features:
 
 - Form for storing a blog post with the following fields:
-   - **Title** - String containing post title
-   - **Description** - Used for content preview, such as from home page cards, or search results
-   - **Cover Image** - Accepts a local image file to be uploaded
-   - **Content** - Textarea that takes markdown and renders it
-   - **Created Date** - Date/time the blog post was created
-   - **Updated Date** - Date/time the blog post was last updated
+  - **Title** - String containing post title
+  - **Description** - Used for content preview, such as from home page cards, or search results
+  - **Cover Image** - Accepts a local image file to be uploaded
+  - **Content** - Textarea that takes markdown and renders it
+  - **Created Date** - Date/time the blog post was created
+  - **Updated Date** - Date/time the blog post was last updated
 - In our app, the blog author will be using the live app to manage posts. They will not be checked into source control (e.g. not a static site)
 - We will not cover authentication in this example
-
 
 ## Architecture
 
 ```mermaid
 flowchart TD
- 
+
   subgraph ProdEnvironment[Prod Environment]
     D[Vercel App] --> E[Production Postgres]
     D --> F[Production Blob Storage]
   end
-  
+
   subgraph PreviewEnvironment[Preview Environment]
     G[Preview App] --> H[Preview Postgres]
     G --> I[Preview Blob Storage]
@@ -45,7 +44,7 @@ flowchart TD
 
 In this model, we will have three environment types:
 
-1. **Local** - what developers use when running on their local laptop. 
+1. **Local** - what developers use when running on their local laptop.
 2. **Preview** - what reviewers see when viewing code that has been pushed to a branch other than our production branch.
 3. **Production** - what end users will see. In our example, this gets updated automatically whenever a merge to `main` happens.
 
@@ -60,7 +59,7 @@ For storing the blog posts, we will use Postgres. Postgres has a number of advan
 - JSON, vector, and other storage types
 - Several managed services make maintenance simple
 
-Locally, we will use Docker to run a copy of Postgres that "just works" with the config in this example. 
+Locally, we will use Docker to run a copy of Postgres that "just works" with the config in this example.
 
 In Preview and Production environments, we will use Vercel Postgres, which offers an extremely simple way to manage the Postgres database. They handle scaling and security updates, making it easier to focus on building and maintaining your app.
 
@@ -85,7 +84,13 @@ Clone this repository, and run `pnpm install`
 
 ### 1. Setting up a local environment
 
-First we'll get a local Postgres database instance running. To make this simpler, we have included a `docker-compose.yml` that starts a new local copy of Postgres on port 5432. 
+First setup your local environment. Copy the `.env.example` file to `.env.development.local` and fill in the values for your local environment. To use the Docker Postgres instance, you can use the following:
+
+```
+DATABASE_URL='postgres://postgres:postgres@localhost:5432/blog'
+```
+
+Second we'll get a local Postgres database instance running. To make this simpler, we have included a `docker-compose.yml` that starts a new local copy of Postgres on port 5432.
 
 This can be started in the background via this command:
 
@@ -118,7 +123,6 @@ pnpm dev
 ```
 
 Then go to http://localhost:3000 and try creating, updating, and viewing posts.
-
 
 Ideas
 

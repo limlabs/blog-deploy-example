@@ -1,14 +1,16 @@
-import { Post } from "@prisma/client";
 import Link from "next/link";
 import Image from "next/image";
-import { Button } from "./ui/button";
+
+import { Post } from "@prisma/client";
+
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardHeader,
   CardTitle,
   CardContent,
   CardFooter,
-} from "./ui/card";
+} from "@/components/ui/card";
 
 export const PostList = ({ posts }: { posts: Post[] }) => {
   if (!posts.length) {
