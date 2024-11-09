@@ -223,4 +223,20 @@ If you've gotten this far, congrats! All of our storage resources are now set up
 1. Make sure the repo you cloned in the first section is pushed
 1. Go to the Vercel Dashboard
 2. Click "Add"
-3. Import the 
+3. Select the repo containing your project
+4. Under environment variables, add the `BLOB_READ_WRITE_TOKEN` and `PRISMA_POSTGRES_URL` from your `.env.production` file -- this will ensure the initial deploy uses the right values (we will replace the preview versions of these later)
+5. Click deploy and wait for it to finish
+6. Visit your production website and make sure you can create / edit posts (you should also see the previous examples you created earlier in this guide)
+7. Go to the [Project Settings](https://vercel.com/liminal/blog-deploy-example/settings/environment-variables) --> Environment Variables --> Create new tab (it's selected by default)
+8. Uncheck Production and check Preview
+9. Add the values from the `.env.preview` file you created earlier and click "Save"
+10. Check out a branch, run `git commit --allow-empty -m "triggering deploy" && git push -u origin <branchName>` to trigger a deploy
+11. Now it's time to remove the Production env vars access for the preview environments. This is to prevent accidental misconfiguration that would affect the production DB from a branch other than `main`. 
+12. Go to [Project Settings](https://vercel.com/liminal/blog-deploy-example/settings/environment-variables) --> Environment Variables, and scroll to the bottom where the existing environment variables are defined. You want to click edit on each one that says "Development", "Preview", "Production" -- these are the ones we added when first setting up the project -- then uncheck "Preview" and "Development", and click save.
+
+Woohoo! Now you should have 
+
+- fully functioning local, preview, and production environments
+- ability to connect to production/preview resources locally for troubleshooting and migrations
+- ability to deploy to the right environment with Vercel automatically on every git push
+
