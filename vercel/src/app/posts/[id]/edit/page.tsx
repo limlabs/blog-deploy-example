@@ -44,7 +44,7 @@ export default async function EditPostPage({
           if (coverImage) {
             const coverImageUrl = await uploadPostCoverImage(
               post.id,
-              coverImage
+              coverImage,
             );
 
             updates = { ...updates, coverImageUrl };

@@ -29,7 +29,7 @@ export default function NewPostPage() {
             console.log("Uploading file");
             const coverImageUrl = await uploadPostCoverImage(
               post.id,
-              coverImage
+              coverImage,
             );
 
             await prisma.post.update({

@@ -3,13 +3,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import z from "zod";
 
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-} from "./ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel } from "./ui/form";
 import { Input } from "./ui/input";
 import { Textarea } from "./ui/textarea";
 import { Button } from "./ui/button";
@@ -44,7 +38,7 @@ export const PostForm = ({
   });
 
   const [coverImageUrl, setCoverImageUrl] = useState<string | null>(
-    initialCoverImageUrl
+    initialCoverImageUrl,
   );
 
   const [coverImage, setCoverImage] = useState<File | null>(null);

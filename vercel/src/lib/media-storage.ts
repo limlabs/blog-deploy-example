@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { put } from '@vercel/blob'
+import { put } from "@vercel/blob";
 
 export interface MediaStorageProvider {
   upload: (destinationPath: string, data: Buffer) => Promise<{ url: string }>;
@@ -16,14 +16,16 @@ const localStorageProvider: MediaStorageProvider = {
     await fs.mkdir(dirname, { recursive: true });
     await fs.writeFile(outputPath, data);
     return { url: `/media/${destinationPath}` };
-  }
+  },
 };
 
 const blobStorageProvider: MediaStorageProvider = {
   upload: async function (destinationPath: string, data: Buffer) {
-    return put(destinationPath, data, { access: 'public'});
+    return put(destinationPath, data, { access: "public" });
   },
-}
+};
 
-const defaultStorageProvider = process.env.BLOB_READ_WRITE_TOKEN ? blobStorageProvider : localStorageProvider;
+const defaultStorageProvider = process.env.BLOB_READ_WRITE_TOKEN
+  ? blobStorageProvider
+  : localStorageProvider;
 export const media = defaultStorageProvider;

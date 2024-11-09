@@ -2,7 +2,7 @@ import { prisma } from "../../lib/db";
 
 import { PostList } from "../../components/post-list";
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 export default async function AllPostsPage() {
   const posts = await prisma.post.findMany({ orderBy: { updatedAt: "desc" } });

@@ -10,7 +10,7 @@ import { prisma } from "../../../lib/db";
 
 import styles from "@/styles/markdown.module.css";
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 export default async function PostPage({
   params,
