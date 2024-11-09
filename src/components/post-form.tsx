@@ -108,7 +108,10 @@ export const PostForm = ({
           </FormControl>
         </FormItem>
         {coverImageUrl && (
-          <img src={coverImageUrl} alt="Thumbnail of blog post cover image" />
+          <>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={coverImageUrl} alt="Thumbnail of blog post cover image" />
+          </>
         )}
         <FormField
           control={form.control}
