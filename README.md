@@ -163,11 +163,12 @@ Next, starting with Postgres, we will set up the Vercel resources to run this ap
 
 6. Try running your local app against the new database:
 
-    ```
-    pnpm dotenvx run --env-file=.env.preview -- pnpm dev
-    ```
+      ```
+      pnpm dotenvx run --env-file=.env.preview -- pnpm dev
+      ```
 
-   It should behave the same as before; i.e. creating, editing, listing, and viewing posts still works.
+    It should behave the same as before; i.e. creating, editing, listing, and viewing posts still works.
+
 7. Now we will create the production Database the same way. Go to the [Storage page](https://vercel.com/liminal/~/stores) and click Create Database. Choose "Postgres, Powered by Neon"
 8. Click through the menus to continue until you get to the "Create Postgres Database" screen.
 
@@ -205,7 +206,8 @@ Instead, we will use Vercel's Blob Storage to handle this duty.
     pnpm dotenvx run --env-file=.env.preview -- pnpm dev
     ```
   
-  You should still be able to upload and preview images. If you inspect the HTML, however, you will notice that your images are coming from `<randomId>.public.vercel-storage.com` instead of `/media` on the server itself.
+    You should still be able to upload and preview images. If you inspect the HTML, however, you will notice that your images are coming from `<randomId>.public.vercel-storage.com` instead of `/media` on the server itself.
+  
 6. Now let's do the same thing for the production Blob store to knock it out. Go to the [Storage page](https://vercel.com/liminal/~/stores) and select "Create Database"
 7. Select "Blob - Fast object storage"
 8. Choose the name `blog-media-production` and create
