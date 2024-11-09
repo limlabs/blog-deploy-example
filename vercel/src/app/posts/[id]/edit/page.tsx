@@ -2,10 +2,10 @@ import { notFound, redirect } from "next/navigation";
 
 import { Prisma } from "@prisma/client";
 
-import { PostForm } from "@/components/post-form";
+import { PostForm } from "../../../../components/post-form";
 
-import { prisma } from "@/lib/db";
-import { uploadPostCoverImage } from "@/lib/post-cover-image";
+import { prisma } from "../../../../lib/db";
+import { uploadPostCoverImage } from "../../../../lib/post-cover-image";
 
 export default async function EditPostPage({
   params,

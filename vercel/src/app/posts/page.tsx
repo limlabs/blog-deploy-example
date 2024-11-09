@@ -1,6 +1,6 @@
-import { prisma } from "@/lib/db";
+import { prisma } from "../../lib/db";
 
-import { PostList } from "@/components/post-list";
+import { PostList } from "../../components/post-list";
 
 export const dynamic = 'force-dynamic';
 

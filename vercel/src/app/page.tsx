@@ -1,9 +1,9 @@
 import Link from "next/link";
 
-import { Button } from "@/components/ui/button";
-import { PostList } from "@/components/post-list";
+import { Button } from "../components/ui/button";
+import { PostList } from "../components/post-list";
 
-import { prisma } from "@/lib/db";
+import { prisma } from "../lib/db";
 
 export const dynamic = 'force-dynamic';
 

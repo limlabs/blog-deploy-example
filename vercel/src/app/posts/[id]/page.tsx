@@ -4,9 +4,9 @@ import { notFound } from "next/navigation";
 import Markdown from "react-markdown";
 import { ArrowLeft, Edit } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
+import { Button } from "../../../components/ui/button";
 
-import { prisma } from "@/lib/db";
+import { prisma } from "../../../lib/db";
 
 import styles from "@/styles/markdown.module.css";
 

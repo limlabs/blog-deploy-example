@@ -1,10 +1,10 @@
 import { redirect } from "next/navigation";
 
-import { prisma } from "@/lib/db";
+import { prisma } from "../../../lib/db";
 
-import { PostForm } from "@/components/post-form";
+import { PostForm } from "../../../components/post-form";
 
-import { uploadPostCoverImage } from "@/lib/post-cover-image";
+import { uploadPostCoverImage } from "../../../lib/post-cover-image";
 
 export default function NewPostPage() {
   return (
