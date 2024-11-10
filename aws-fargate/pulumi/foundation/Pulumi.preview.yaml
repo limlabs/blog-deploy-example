@@ -1,0 +1,4 @@
+encryptionsalt: v1:Uk5+EqOIGvQ=:v1:bJlMZddCbRjoIuFY:3YoUvPUH9vyTVmfUhEl8oeptX30DFQ==
+config:
+  aws:region: us-west-2
+  blog-aws-fargate:org: limlabs
