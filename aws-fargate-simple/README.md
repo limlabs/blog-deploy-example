@@ -41,7 +41,6 @@ flowchart TD
 In this model, we will have three environment types:
 
 1. **Local** - what developers use when running on their local laptop.
-2. **Preview** - what reviewers see when viewing code that has been pushed to a branch other than our production branch.
 3. **Production** - what end users will see. In our example, this gets updated automatically whenever a merge to `main` happens.
 
 ### Infrastructure Components
@@ -57,7 +56,7 @@ For storing the blog posts, we will use Postgres. Postgres has a number of advan
 
 Locally, we will use Docker to run a copy of Postgres that "just works" with the config in this example.
 
-In Preview and Production environments, we will use RDS Postgres, which offers an affordable, scalable way to manage the Postgres database. They handle scaling and security updates, making it easier to focus on building and maintaining your app.
+In the Production environment, we will use RDS Postgres, which offers an affordable, scalable way to manage the Postgres database. They handle scaling and security updates, making it easier to focus on building and maintaining your app.
 
 #### Media Storage
 
@@ -126,7 +125,7 @@ In this project, we have already created some resources that we can use to quick
 
       Make sure to replace `<yourname>` with some custom name. S3 bucket names are global!
 
-3. Create a local pulumi state file by logging in
+3. Log into Pulumi with the newly created bucket
 
       ```
       pulumi login s3://blog-deploy-example-pulumi-<yourname>
