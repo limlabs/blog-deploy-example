@@ -31,8 +31,6 @@ jobs:
 
       - name: Run migrations
         run: |
-          scripts/env_pull.sh production
-          npx prisma generate
           pnpm dotenvx run --env-file=.env.production -- npx prisma migrate deploy
 
       - name: Deploy to production
