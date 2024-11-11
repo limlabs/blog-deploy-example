@@ -5,7 +5,6 @@ import * as random from "@pulumi/random";
 
 const config = new pulumi.Config();
 const init = config.getBoolean("init") || false;
-const defaultVpc = new awsx.ec2.DefaultVpc("default");
 
 const stack = pulumi.getStack();
 
