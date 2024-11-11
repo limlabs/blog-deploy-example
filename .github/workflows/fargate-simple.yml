@@ -13,13 +13,27 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
-        
+
+      - uses: actions/setup-node@v3.5.0
+        with:
+          node-version-file: aws-fargate-simple/package.json
+
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-region: us-west-2
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - name: Install dependencies
+        run: npm install -g pnpm
+      - run: pnpm install
+
+      - name: Run migrations
+        run: |
+          scripts/env_pull.sh production
+          npx prisma generate
+          pnpm dotenvx run --env-file=.env.production -- npx prisma migrate deploy
 
       - name: Deploy to production
         uses: pulumi/actions@v6
