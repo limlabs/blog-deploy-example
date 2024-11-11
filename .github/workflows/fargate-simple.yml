@@ -34,6 +34,7 @@ jobs:
         with:
           command: up
           stack-name: production
+          work-dir: aws-fargate-simple/pulumi
           cloud-url: ${{ vars.PULUMI_STATE_BUCKET }}
         env:
           PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE }}
