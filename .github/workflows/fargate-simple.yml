@@ -7,8 +7,6 @@ on:
       - main
     paths: 
       - 'aws-fargate-simple/**'
-    paths-ignore: 
-      - 'aws-fargate-simple/README.md'
 
 jobs:
   deploy:
