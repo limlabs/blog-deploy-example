@@ -1,7 +1,12 @@
 name: Deploy Fargate (Simple)
 
 on:
-  workflow_dispatch: {}
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths: 
+      - 'aws-fargate-simple/**'
 
 jobs:
   deploy:

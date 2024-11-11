@@ -22,22 +22,18 @@ Our app will be a simple blog with the following features:
 flowchart TD
 
   subgraph ProdEnvironment[Prod Environment]
-    D[Vercel App] --> E[Production Postgres]
-    D --> F[Production Blob Storage]
-  end
-
-  subgraph PreviewEnvironment[Preview Environment]
-    G[Preview App] --> H[Preview Postgres]
-    G --> I[Preview Blob Storage]
+    D["Docker image (ECR)"] -- task definition --> E
+    E[AWS Fargate Service] -- app data --> F[Production Postgres]
+    E -- media uploads --> G[AWS S3]
+    E -- routing/traffic managment --> H[Application Load Balancer]
   end
 
   subgraph LocalEnvironment[Local Environment]
     A[Developer Machine] --> B["Local Postgres (Docker)"]
-    A --> C[Local filesystem]
+    A -- media uploads --> C[Local filesystem]
   end
 
-  LocalEnvironment -- git push --> PreviewEnvironment
-  PreviewEnvironment -- merge to main --> ProdEnvironment
+  LocalEnvironment -- git push + workflow dispatch --> ProdEnvironment
 ```
 
 ### Environments
@@ -122,10 +118,18 @@ Next, starting with Postgres, we will set up the AWS resources to run this app i
 In this project, we have already created some resources that we can use to quickly create the resources we need in a way that supports our proposed deployment architecture. These are located in the `pulumi/` folder.
 
 1. Install [Pulumi for AWS](https://www.pulumi.com/docs/iac/get-started/aws/begin/)
-2. Create a local pulumi state file by logging in
+2. Create an S3 bucket to store the Pulumi state:
 
       ```
-      pulumi login --local
+      aws s3 mb s3://blog-deploy-example-pulumi-<yourname>
+      ```
+
+      Make sure to replace `<yourname>` with some custom name. S3 bucket names are global!
+
+3. Create a local pulumi state file by logging in
+
+      ```
+      pulumi login s3://blog-deploy-example-pulumi-<yourname>
       ```
 
 3. Go to the directory where the Pulumi project is located and start pulumi:
@@ -201,3 +205,79 @@ Now we are going to deploy the app to AWS as an ECS Fargate service. Fargate off
 2. This should build and push a Docker image, and create a service in Fargate. Once everything is deployed, you can visit the `appURL` output from Pulumi to try it out!
 
 3. To update your service, edit some files, and then `cd pulumi && pulumi up`. The Docker container will automatically be rebuilt and deployed over the existing version.
+
+
+### 5: Deployment Pipeline
+
+With the resources already in place, it's fairly straightforward to add a CI/CD pipeline that deploys updates. In this guide we will use GitHub Actions, which is built into GitHub.
+
+1. Move everything from `./aws-fargate-simple` to `./`
+2. Delete the other folders (including the current `.github/worfklows` -- we will replace it in an upcoming step)
+3. Push this repo to GitHub if you haven't already
+4. In the GitHub repo interface, go the Settings --> Secrets and Variables --> Actions
+5. Add the following variables:
+
+   - `MEDIA_BUCKET_NAME` - can get this from `.env.production`
+   - `PULUMI_STATE_BUCKET` - can get this from section 2 (e.g. `s3://blog-deploy-example-pulumi-<yourname>` )
+
+6. Add the following secrets:
+
+   - `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` - The simplest way is to generate them for your own IAM user.
+      - This is not the most secure way to authenticate with AWS. You may not need these if you are using OIDC auth for your GitHub Actions. Consult your administrator if you're not sure.
+   - `POSTGRES_PRISMA_URL` - can get this from `.env.production`
+   - `PULUMI_CONFIG_PASSPHRASE` - This is used to encrypt/decrypt the Pulumi state. Generated when running `pulumi login s3://blog-deploy-example-pulumi-<yourname>` for the first time
+   
+7. Add a new file under `.github/workflows/deploy.yml` with the following contents:
+
+      ```yml
+      name: Deploy Fargate (Simple)
+
+      on:
+      workflow_dispatch: {}
+
+      jobs:
+      deploy:
+         runs-on: ubuntu-latest
+         defaults:
+            run:
+            working-directory: aws-fargate-simple
+
+         steps:
+            - name: Checkout repository
+            uses: actions/checkout@v2
+
+            - uses: actions/setup-node@v3.5.0
+            with:
+               node-version-file: package.json
+
+            - name: Configure AWS Credentials
+            uses: aws-actions/configure-aws-credentials@v1
+            with:
+               aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+               aws-region: us-west-2
+               aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+            - name: Install dependencies
+            run: npm install -g pnpm
+            - run: pnpm install
+
+            - name: Run migrations
+            run: |
+               npx prisma migrate deploy
+            env:
+               POSTGRES_PRISMA_URL: ${{ secrets.POSTGRES_PRISMA_URL }}
+
+            - name: Deploy to production
+            uses: pulumi/actions@v6
+            with:
+               command: up
+               stack-name: production
+          cloud-url: ${{ vars.PULUMI_STATE_BUCKET }}
+        env:
+          PULUMI_CONFIG_PASSPHRASE: ${{ secrets.PULUMI_CONFIG_PASSPHRASE }}
+      ```
+
+8. Commit and push the file to the `main` brach
+9. Go to the Actions tab and select the `Deploy Fargate (Simple)` action from the sidebar
+10. Run the workflow using the dropdown on the right
+11. Wait for your deploy to complete. It should take about 4-5 minutes maximum
