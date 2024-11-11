@@ -76,7 +76,7 @@ To simplify the local development experience, we will include an alternate imple
 ### 1. Set up Local Environment
 
 1. Clone this repository, and run `pnpm install`.
-2. Copy the `.env.example` file to `.env.development.local` and fill in the values for your local environment. To use the Docker Postgres instance, you can use the following:
+2. Copy the `.env.example` file to `.env` and fill in the values for your local environment. To use the Docker Postgres instance, you can use the following:
 
    ```
    POSTGRES_PRISMA_URL='postgres://postgres:postgres@localhost:5432/blog'
