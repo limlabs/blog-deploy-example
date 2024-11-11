@@ -1,0 +1,3 @@
+encryptionsalt: v1:Xp50qL10jHM=:v1:pgk4k6WR//hjvFuV:zhkbUvci2LF5umidmknSazyrs4qXEA==
+config:
+  blog-aws-fargate-simple:init: "false"
