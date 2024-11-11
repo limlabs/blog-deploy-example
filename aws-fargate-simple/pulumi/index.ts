@@ -35,23 +35,6 @@ new aws.s3.BucketAclV2("media", {
   ],
 });
 
-new aws.s3.BucketPolicy("media", {
-  bucket: mediaBucket.id,
-  policy: pulumi.all([mediaBucket.bucket, mediaBucket.arn]).apply(([bucket, arn]) => JSON.stringify({
-    Version: "2012-10-17",
-    Statement: [
-      {
-        Effect: "Allow",
-        Principal: "*",
-        Action: "s3:GetObject",
-        Resource: [
-          `${arn}/*`,
-        ],
-      },
-    ],
-  })),
-});
-
 
 const dbPassword = new random.RandomPassword("dbPassword", {
   length: 24,
@@ -217,10 +200,7 @@ if (!init) {
   const image = new awsx.ecr.Image("image", {
     repositoryUrl: repo.url,
     context: "..",
-    platform: "linux/amd64",
-    args: {
-      MEDIA_BUCKET_NAME: mediaBucket.bucket,
-    },
+    platform: "linux/amd64"
   });
   
   new awsx.ecs.FargateService("service", {
