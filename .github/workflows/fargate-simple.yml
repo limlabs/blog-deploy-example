@@ -28,6 +28,8 @@ jobs:
       - name: Run migrations
         run: |
           npx prisma migrate deploy
+        env:
+          POSTGRES_PRISMA_URL: ${{ secrets.POSTGRES_PRISMA_URL }}
 
       - name: Deploy to production
         uses: pulumi/actions@v6
