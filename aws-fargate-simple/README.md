@@ -61,13 +61,13 @@ For storing the blog posts, we will use Postgres. Postgres has a number of advan
 
 Locally, we will use Docker to run a copy of Postgres that "just works" with the config in this example.
 
-In Preview and Production environments, we will use Vercel Postgres, which offers an extremely simple way to manage the Postgres database. They handle scaling and security updates, making it easier to focus on building and maintaining your app.
+In Preview and Production environments, we will use RDS Postgres, which offers an affordable, scalable way to manage the Postgres database. They handle scaling and security updates, making it easier to focus on building and maintaining your app.
 
 #### Media Storage
 
 For storing the cover images that accompany each post, a different data store is more appropriate. Typically media and other binary assets are stored in a "blob" storage solution, such as Amazon S3. These blob stores are managed by cloud providers, and offer high read scalability and can store large amounts of data affordably.
 
-In our case, we will be using Vercel Blob storage. We chose this to keep the number of cloud vendors and integrations low. This pattern however can work just as well with another cloud storage provider like AWS, GCP or Azure.
+In our case, we will be using AWS S3. We chose this to keep the number of cloud vendors and integrations low.
 
 To simplify the local development experience, we will include an alternate implementation for storage that depends on the local filesystem. This makes it simple to run `pnpm dev` without any extra setup or authentication.
 
@@ -119,12 +119,7 @@ To simplify the local development experience, we will include an alternate imple
 
 Next, starting with Postgres, we will set up the AWS resources to run this app in the cloud. To manage these resources as code, we will use Pulumi.
 
-In this project, we have already created some resources that we can use to quickly create the resources we need in a way that supports our proposed deployment architecture. These are located in the `pulumi/` folder and include:
-
-- `foundation/` - Resources that are created once for each Pulumi stack (`preview` and `production`). These include the Postgres database (using RDS Aurora Serverless), database bastion, load balancer, ECR repo for storing Docker images, and the Fargate cluster where our services will be deployed.
-- `app/` - The NextJS blog app. When in preview mode, this is associated with multiple Pulumi stacks; in production, only a single stack exists.
-
-For this section, we will focus on the `foundation/` directory.
+In this project, we have already created some resources that we can use to quickly create the resources we need in a way that supports our proposed deployment architecture. These are located in the `pulumi/` folder.
 
 1. Install [Pulumi for AWS](https://www.pulumi.com/docs/iac/get-started/aws/begin/)
 2. Create a local pulumi state file by logging in
@@ -136,36 +131,25 @@ For this section, we will focus on the `foundation/` directory.
 3. Go to the directory where the Pulumi project is located and start pulumi:
 
       ```
-      cd foundation/pulumi
-      pulumi up
+      cd pulumi
+      pulumi init --stack production
       ```
 
-      - Select "preview" for the stack for this step -- we will create the production environment later
+### 3. Initialize the Database
 
-4. Run the following command to pull a connection string that will work locally:
-
-      ```
-      # If you are using macOS or Linux, run this command
-      scripts/pull_connection_string.sh preview
-
-      # If you're on Windows, you can run the Powershell command as an alternate
-      pwsh scripts/pull_connection_string.ps1 preview
-      ```
-
-5. It's time to deploy database migrations. To do this, we will use the bastion created as part of the foundation infrastructure. A bastion is a small EC2 instance (virtual machine) that has network connectivity to both our database and our local machine. In our case, we have created a small script to make it easier to create a database tunnel using the bastion. Run the following command to create a bastion connection:
+1. Run the following command to pull a connection string that will work locally:
 
       ```
-      # If you are using macOS or Linux, run this command
-      scripts/db_tunnel.sh preview
-
-      # If you're on Windows, you can run the Powershell command as an alternate
-      pwsh scripts/db_tunnel.ps1 preview
+      cd ../
+      scripts/env_pull.sh
       ```
 
-6. With the tunnel still running, open a new terminal window inside the NPM project root (`aws-fargate/` in this repo) and run the following:
+      This will go into your `.env.production` file. This file is `.gitignore`d so that you don't accidentally check in your production credentials
+
+2. Apply database migrations by running the following:
 
       ```
-      pnpm dotenvx run --env-file=.env.preview -- npx prisma migrate deploy
+      pnpm dotenvx run --env-file=.env.production -- npx prisma migrate deploy
       ```
 
       You should see output similar to the following:
@@ -173,7 +157,7 @@ For this section, we will focus on the `foundation/` directory.
       ```
          Environment variables loaded from .env
       Prisma schema loaded from prisma/schema.prisma
-      Datasource "db": PostgreSQL database "blog", schema "public" at "127.0.0.1:5432"
+      Datasource "db": PostgreSQL database "blog", schema "public" at "<hostname>:5432"
 
       3 migrations found in prisma/migrations
 
@@ -194,10 +178,26 @@ For this section, we will focus on the `foundation/` directory.
       All migrations have been successfully applied.
       ```
 
-7. Try running your local app against the new database:
+3. Try running your local app against the new database:
 
    ```
-   pnpm dotenvx run --env-file=.env.preview -- pnpm dev
+   pnpm dotenvx run --env-file=.env.production -- pnpm dev
    ```
 
    It should behave the same as before; i.e. creating, editing, listing, and viewing posts still works.
+
+### 4. Deploy the App
+
+Now we are going to deploy the app to AWS as an ECS Fargate service. Fargate offers a way to run containers without an underlying Virtual Machine. This cuts down on the maintenance of a VM, as well as increases the scalability of the service.
+
+1. First, run this command to turn off "init" mode for our Pulumi stack:
+
+      ```bash
+      cd pulumi
+      pulumi config set init false 
+      pulumi up
+      ```
+
+2. This should build and push a Docker image, and create a service in Fargate. Once everything is deployed, you can visit the `appURL` output from Pulumi to try it out!
+
+3. To update your service, edit some files, and then `cd pulumi && pulumi up`. The Docker container will automatically be rebuilt and deployed over the existing version.
