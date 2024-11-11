@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { put } from "@vercel/blob";
+import s3Client from "@aws-sdk/client-s3";
 
 export interface MediaStorageProvider {
   upload: (destinationPath: string, data: Buffer) => Promise<{ url: string }>;

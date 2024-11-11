@@ -1,13 +1,11 @@
 #!/bin/bash
 
 stackName=$1
-
 if [ -z "$stackName" ]; then
-  echo "Please provide the stack name"
-  exit 1
+  stackName="production"
 fi
 
-secretArn=$(cd pulumi && pulumi stack output | grep -E 'connectionStringArn' | awk '{print $2}')
+secretArn=$(cd pulumi && pulumi stack output --stack ${stackName} | grep -E 'connectionStringArn' | awk '{print $2}')
 connectionString=$(aws secretsmanager get-secret-value --secret-id $secretArn --query SecretString --output text)
 
 # Replace or append the connectionString as POSTGRES_PRISMA_URL in .env.${stackName}

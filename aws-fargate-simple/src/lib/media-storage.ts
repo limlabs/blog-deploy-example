@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { put } from "@vercel/blob";
+import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3"
 
 export interface MediaStorageProvider {
   upload: (destinationPath: string, data: Buffer) => Promise<{ url: string }>;
@@ -21,11 +21,23 @@ const localStorageProvider: MediaStorageProvider = {
 
 const blobStorageProvider: MediaStorageProvider = {
   upload: async function (destinationPath: string, data: Buffer) {
-    return put(destinationPath, data, { access: "public" });
+    const s3 = new S3Client({});
+
+    // Upload the image data to the S3 bucket
+    await s3.send(new PutObjectCommand({
+      Bucket: process.env.MEDIA_BUCKET_NAME,
+      Key: destinationPath,
+      Body: data,
+      ACL: "public-read",
+    }));
+
+    return {
+      url: `https://${process.env.MEDIA_BUCKET_NAME}.s3.amazonaws.com/${destinationPath}`,
+    };
   },
 };
 
-const defaultStorageProvider = process.env.BLOB_READ_WRITE_TOKEN
+const defaultStorageProvider = process.env.MEDIA_BUCKET_NAME
   ? blobStorageProvider
   : localStorageProvider;
 export const media = defaultStorageProvider;

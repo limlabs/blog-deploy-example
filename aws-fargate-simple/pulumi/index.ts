@@ -4,9 +4,53 @@ import * as awsx from "@pulumi/awsx";
 import * as random from "@pulumi/random";
 
 const config = new pulumi.Config();
-const init = config.getBoolean("init") || false;
+const init = config.getBoolean("init") ?? true;
 
 const stack = pulumi.getStack();
+
+const mediaBucket = new aws.s3.BucketV2("mediaBucket", {
+  bucketPrefix: pulumi.interpolate`blog-${stack}-media`, 
+});
+
+const mediaBucketOwnershipControls = new aws.s3.BucketOwnershipControls("media", {
+  bucket: mediaBucket.id,
+  rule: {
+      objectOwnership: "BucketOwnerPreferred",
+  },
+});
+const mediaBucketPublicAccessBlock = new aws.s3.BucketPublicAccessBlock("media", {
+  bucket: mediaBucket.id,
+  blockPublicAcls: false,
+  blockPublicPolicy: false,
+  ignorePublicAcls: false,
+  restrictPublicBuckets: false,
+});
+new aws.s3.BucketAclV2("media", {
+  bucket: mediaBucket.id,
+  acl: "public-read",
+}, {
+  dependsOn: [
+      mediaBucketOwnershipControls,
+      mediaBucketPublicAccessBlock,
+  ],
+});
+
+new aws.s3.BucketPolicy("media", {
+  bucket: mediaBucket.id,
+  policy: pulumi.all([mediaBucket.bucket, mediaBucket.arn]).apply(([bucket, arn]) => JSON.stringify({
+    Version: "2012-10-17",
+    Statement: [
+      {
+        Effect: "Allow",
+        Principal: "*",
+        Action: "s3:GetObject",
+        Resource: [
+          `${arn}/*`,
+        ],
+      },
+    ],
+  })),
+});
 
 
 const dbPassword = new random.RandomPassword("dbPassword", {
@@ -40,6 +84,7 @@ const dbCluster = new aws.rds.Cluster("BlogDBCluster", {
   masterUsername: "postgres",
   masterPassword: dbPassword.result,
   vpcSecurityGroupIds: [dbIngressSecruityGroup.id],
+  skipFinalSnapshot: true,
 });
 
 const database = new aws.rds.ClusterInstance("BlogDBInstance", {
@@ -53,7 +98,7 @@ const database = new aws.rds.ClusterInstance("BlogDBInstance", {
 const postgresPrismaURL = pulumi.interpolate`postgresql://${dbCluster.masterUsername}:${dbPassword.result}@${database.endpoint}:${database.port}/${dbCluster.databaseName}`
 
 const connectionStringSecret = new aws.secretsmanager.Secret("connectionString", {
-  name: pulumi.interpolate`blog/foundation/${stack}/connectionString`
+  name: pulumi.interpolate`blog-${stack}-connectionString`
 });
 
 new aws.secretsmanager.SecretVersion("connectionStringVersion", {
@@ -62,14 +107,36 @@ new aws.secretsmanager.SecretVersion("connectionStringVersion", {
 });
 
 const repo = new awsx.ecr.Repository("repo", {
+  name: pulumi.interpolate`blog-${stack}`,
   forceDelete: true,
 });
 
 const lb = new awsx.lb.ApplicationLoadBalancer("lb", {
-  name: pulumi.interpolate`blog-foundation-${stack}-lb`,
+  name: pulumi.interpolate`blog-${stack}-lb`,
+  defaultTargetGroup: {
+    name: pulumi.interpolate`blog-${stack}-tg`,
+    port: 3000,
+    targetType: "ip",
+    deregistrationDelay: 10,
+    healthCheck: {
+      enabled: true,
+    }
+  },
   listener: {
     port: 80,
   },
+});
+
+new aws.s3.BucketCorsConfigurationV2("media", {
+  bucket: mediaBucket.id,
+  corsRules: [
+    {
+      allowedHeaders: ["*"],
+      allowedMethods: ["GET", "PUT", "POST", "DELETE"],
+      allowedOrigins: [pulumi.interpolate`http://${lb.loadBalancer.dnsName}`],
+      maxAgeSeconds: 3000,
+    }
+  ],
 });
 
 const cluster = new aws.ecs.Cluster("cluster", {
@@ -97,19 +164,53 @@ const executionRolePolicyAttachment = new aws.iam.PolicyAttachment("ApExecutionR
   roles: [executionRole],
 });
 
-const executionRolePolicy = new aws.iam.RolePolicy("ExeuctionRolePolicy", {
+const executionRolePolicy = new aws.iam.RolePolicy("ExecutionRolePolicy", {
   role: executionRole,
   name: pulumi.interpolate`blog-${stack}-app-execution-role-policy`,
-  policy: JSON.stringify({
+  policy: connectionStringSecret.arn.apply(arn => JSON.stringify({
     Version: "2012-10-17",
     Statement: [
       {
         Action: "secretsmanager:GetSecretValue",
         Effect: "Allow",
-        Resource: "*",
+        Resource: [arn],
+      },
+    ],
+  })),
+});
+
+const taskRole = new aws.iam.Role("AppTaskRole", {
+  name: pulumi.interpolate`blog-${stack}-app-task-role`,
+  assumeRolePolicy: JSON.stringify({
+    Version: "2012-10-17",
+    Statement: [
+      {
+        Action: "sts:AssumeRole",
+        Effect: "Allow",
+        Principal: {
+          Service: "ecs-tasks.amazonaws.com",
+        },
       },
     ],
   }),
+});
+
+new aws.iam.RolePolicy("TaskRolePolicy", {
+  name: pulumi.interpolate`blog-${stack}-app-task-role-policy`,
+  role: taskRole,
+  policy: {
+    Version: "2012-10-17",
+    Statement: [
+      {
+        Action: [
+          "s3:PutObject",
+          "s3:PutObjectAcl",
+        ],
+        Effect: "Allow",
+        Resource: [pulumi.interpolate`${mediaBucket.arn}/*`],
+      }
+    ],
+  }
 });
 
 if (!init) {
@@ -117,10 +218,13 @@ if (!init) {
     repositoryUrl: repo.url,
     context: "..",
     platform: "linux/amd64",
+    args: {
+      MEDIA_BUCKET_NAME: mediaBucket.bucket,
+    },
   });
   
   new awsx.ecs.FargateService("service", {
-    name: pulumi.interpolate`blog-app-${stack}`,
+    name: pulumi.interpolate`blog-${stack}-app`,
     cluster: cluster.arn,
     assignPublicIp: true,
     loadBalancers: [{
@@ -129,6 +233,9 @@ if (!init) {
       targetGroupArn: lb.defaultTargetGroup.arn,
     }],
     taskDefinitionArgs: {
+      taskRole: {
+        roleArn: taskRole.arn,
+      },
       executionRole: {
         roleArn: executionRole.arn,
       },
@@ -142,6 +249,12 @@ if (!init) {
           hostPort: 3000,
           containerPort: 3000,
         }],
+        environment: [
+          {
+            name: "MEDIA_BUCKET_NAME",
+            value: mediaBucket.bucket,
+          },
+        ],
         secrets: [
           {
             name: "POSTGRES_PRISMA_URL",
@@ -151,11 +264,11 @@ if (!init) {
       },
     },
   }, {
-    dependsOn: [executionRolePolicy, executionRolePolicyAttachment, lb]
+    dependsOn: [executionRolePolicy, executionRolePolicyAttachment]
   });
-
 }
 
 export const appURL = pulumi.interpolate`http://${lb.loadBalancer.dnsName}`;
 export const connectionStringArn = connectionStringSecret.arn;
 export const dbEndpoint = database.endpoint;
+export const mediaBucketName = mediaBucket.bucket;
