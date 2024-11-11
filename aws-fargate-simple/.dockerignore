@@ -4,3 +4,5 @@ data/
 pulumi
 .env*
 public/media
+README.md
+docker-compose.yml
