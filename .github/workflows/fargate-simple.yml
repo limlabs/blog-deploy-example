@@ -16,7 +16,7 @@ jobs:
 
       - uses: actions/setup-node@v3.5.0
         with:
-          node-version-file: package.json
+          node-version-file: aws-fargate-simple/package.json
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v1
