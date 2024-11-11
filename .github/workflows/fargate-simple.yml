@@ -25,13 +25,9 @@ jobs:
           aws-region: us-west-2
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
-      - name: Install dependencies
-        run: npm install -g pnpm
-      - run: pnpm install
-
       - name: Run migrations
         run: |
-          pnpm dotenvx run --env-file=.env.production -- npx prisma migrate deploy
+          npx prisma migrate deploy
 
       - name: Deploy to production
         uses: pulumi/actions@v6
