@@ -25,6 +25,10 @@ jobs:
           aws-region: us-west-2
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
+      - name: Install dependencies
+        run: npm install -g pnpm
+      - run: pnpm install
+
       - name: Run migrations
         run: |
           npx prisma migrate deploy
