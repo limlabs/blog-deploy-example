@@ -5,6 +5,22 @@ import * as random from "@pulumi/random";
 
 const stack = pulumi.getStack();
 
+const vpc = new awsx.ec2.Vpc(`blog-${stack}-vpc`, {
+  enableDnsHostnames: true,
+  enableDnsSupport: true,
+  cidrBlock: "10.0.0.0/16",
+  natGateways: {
+    strategy: "None",
+  },
+  subnetStrategy: "Auto",
+  subnetSpecs: [
+    {
+      type: "Public",
+      cidrMask: 20,
+    },
+  ],
+});
+
 const mediaBucket = new aws.s3.BucketV2("mediaBucket", {
   bucketPrefix: pulumi.interpolate`blog-${stack}-media`, 
 });
@@ -38,6 +54,7 @@ const dbPassword = new random.RandomPassword("dbPassword", {
 });
 
 const dbIngressSecruityGroup = new aws.ec2.SecurityGroup("DBIngressSecurityGroup", {
+  vpcId: vpc.vpcId,
   ingress: [
     {
       protocol: "tcp",
@@ -56,17 +73,24 @@ const dbIngressSecruityGroup = new aws.ec2.SecurityGroup("DBIngressSecurityGroup
   ],
 });
 
+const publicSubnetGroup = new aws.rds.SubnetGroup("publicSubnetGroup", {
+  name: pulumi.interpolate`blog-${stack}-public-subnet-group`,
+  subnetIds: vpc.publicSubnetIds,
+});
+
 const dbCluster = new aws.rds.Cluster("BlogDBCluster", {
   clusterIdentifier: pulumi.interpolate`blog-${stack}-db-cluster`,
   engine: aws.rds.EngineType.AuroraPostgresql,
   databaseName: "blog",
   masterUsername: "postgres",
   masterPassword: dbPassword.result,
-  vpcSecurityGroupIds: [dbIngressSecruityGroup.id],
+  dbSubnetGroupName: publicSubnetGroup.name,
+  vpcSecurityGroupIds: [dbIngressSecruityGroup.id.apply(id => id)],
   skipFinalSnapshot: true,
 });
 
 const database = new aws.rds.ClusterInstance("BlogDBInstance", {
+  dbSubnetGroupName: publicSubnetGroup.name,
   clusterIdentifier: dbCluster.id,
   engine: aws.rds.EngineType.AuroraPostgresql,
   publiclyAccessible: true,
@@ -90,9 +114,33 @@ const repo = new awsx.ecr.Repository("repo", {
   forceDelete: true,
 });
 
+const publicIngressSecurityGroup = new aws.ec2.SecurityGroup("PublicIngressSecurityGroup", {
+  vpcId: vpc.vpcId,
+  ingress: [
+    {
+      protocol: "tcp",
+      fromPort: 80,
+      toPort: 80,
+      cidrBlocks: ["0.0.0.0/0"],
+    }
+  ],
+  egress: [
+    {
+      protocol: "tcp",
+      fromPort: 0,
+      toPort: 65535,
+      cidrBlocks: ["0.0.0.0/0"],
+    }
+  ],
+});
+
+
 const lb = new awsx.lb.ApplicationLoadBalancer("lb", {
   name: pulumi.interpolate`blog-${stack}-lb`,
+  securityGroups: [publicIngressSecurityGroup.id.apply(id => id)],
+  subnetIds: vpc.publicSubnetIds,
   defaultTargetGroup: {
+    vpcId: vpc.vpcId,
     name: pulumi.interpolate`blog-${stack}-tg`,
     port: 3000,
     targetType: "ip",
@@ -198,10 +246,34 @@ const image = new awsx.ecr.Image("image", {
   platform: "linux/amd64"
 });
 
+const appSecurityGroup = new aws.ec2.SecurityGroup("AppSecurityGroup", {
+  vpcId: vpc.vpcId,
+  ingress: [
+    {
+      protocol: "tcp",
+      fromPort: 3000,
+      toPort: 3000,
+      securityGroups: [publicIngressSecurityGroup.id.apply(id => id)],
+    }
+  ],
+  egress: [
+    {
+      protocol: "tcp",
+      fromPort: 0,
+      toPort: 65535,
+      cidrBlocks: ["0.0.0.0/0"],
+    }
+  ],
+});
+
 new awsx.ecs.FargateService("service", {
   name: pulumi.interpolate`blog-${stack}-app`,
   cluster: cluster.arn,
-  assignPublicIp: true,
+  networkConfiguration: {
+    subnets: vpc.publicSubnetIds,
+    assignPublicIp: true,
+    securityGroups: [appSecurityGroup.id.apply(id => id)],
+  },
   loadBalancers: [{
     containerName: "blog",
     containerPort: 3000,
