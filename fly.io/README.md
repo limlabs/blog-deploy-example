@@ -24,4 +24,40 @@ Everything should _almost_ work. However, you'll notice that images aren't displ
 
 Now you should be able to see images you previously uploaded, as well as new ones, alongside your posts!
 
+## 3. Create a CI/CD Pipeline
 
+Now we will create a simple deployment pipeline that uses GitHub Actions to deploy to fly.io on each push to the `main` branch.
+
+1. Run the following command to generate a fly API token for your app:
+
+    ```
+    fly tokens create deploy -x 999999h
+    ```
+
+1. Push your copy of this repo to GitHub as a new repo if you haven't already
+1. In your GitHub repository settings page, click on "Secrets and Variables --> Actions"
+1. Add the secret as `FLY_API_TOKEN` and save
+1. Locally, add the following content to `.github/workflows/deploy.yml`:
+
+
+      ```yml
+      name: Fly Deploy
+      on:
+        push:
+          branches:
+            - main
+      jobs:
+        deploy:
+          name: Deploy app
+          runs-on: ubuntu-latest
+          steps:
+            - uses: actions/checkout@v4
+            - uses: superfly/flyctl-actions/setup-flyctl@master
+            - run: flyctl deploy --remote-only
+              env:
+                FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+      ```
+
+1. Commit the new file and push to `main`
+
+You're done. Your deployment should kick off automatically in GitHub actions.
