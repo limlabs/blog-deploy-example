@@ -226,4 +226,4 @@ With the resources already in place, it's fairly straightforward to add a CI/CD 
 8. Commit and push the file to the `main` brach
 9. Go to the Actions tab and select the `Deploy Fargate (Simple)` action from the sidebar
 10. Run the workflow using the dropdown on the right
-11. Wait for your deploy to complete. It should take about 4-5 minutes maximum
+11. Wait for your deploy to complete. It should take about 5-10 minutes
