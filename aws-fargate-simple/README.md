@@ -97,6 +97,10 @@ To simplify the local development experience, we will include an alternate imple
 4. Run this command to initialize your local database with the prisma schema for this app:
 
    ```
+   # Copy the default local env variables from the example so prisma can recognize them
+   cp .env.example .env 
+
+   # Run prisma migrations
    pnpm dlx prisma migrate dev
    ```
 
@@ -149,7 +153,7 @@ Keep in mind some caveats before going to production.  This is currently outside
 - Database access is open-internet. You will want to switch to a private VPC and access locally/pipeline via a tunnel (usually [AWS SSM](https://docs.aws.amazon.com/systems-manager/)).
 - NextJS cache is not persistent across deploys. This likely could be solved with a volume mount, but does not have a significant impact for many new applications, so it's not covered here.
 
-### 3: Deployment Pipeline
+### 3. Deployment Pipeline
 
 With the resources already in place, it's fairly straightforward to add a CI/CD pipeline that deploys updates. In this guide we will use GitHub Actions, which is built into GitHub.
 
