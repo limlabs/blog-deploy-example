@@ -38,13 +38,9 @@ RUN \
 
 # Production image, copy all the files and run next
 FROM base AS runner
-
-RUN npm i -g prisma
-
 WORKDIR /app
 
 ENV NODE_ENV=production
-
 # Uncomment the following line in case you want to disable telemetry during runtime.
 # ENV NEXT_TELEMETRY_DISABLED=1
 
@@ -52,7 +48,6 @@ RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
 COPY --from=builder /app/public ./public
-COPY --from=builder /app/prisma ./prisma
 
 # Set the correct permission for prerender cache
 RUN mkdir .next
@@ -72,6 +67,4 @@ ENV PORT=3000
 # server.js is created by next build from the standalone output
 # https://nextjs.org/docs/pages/api-reference/next-config-js/output
 ENV HOSTNAME="0.0.0.0"
-
-# Run Prisma migrations and then start the server
-CMD ["sh", "-c", "prisma migrate deploy && node server.js"]
+CMD ["node", "server.js"]

@@ -1,0 +1,8 @@
+node_modules/
+.next/
+data/
+pulumi
+.env*
+public/media
+README.md
+docker-compose.yml

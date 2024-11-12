@@ -135,21 +135,78 @@ In this project, we have already created some resources that we can use to quick
 
       ```
       cd pulumi
-      pulumi up --stack production
+      pulumi init --stack production
       ```
 
-      Remember your password; it will be needed whenever you need to update your stack!
+### 3. Initialize the Database
 
-At this point, you should have a working AWS RDS Aurora Postgres instance, ECS Fargate service with the blog app, and S3 Bucket where the files are uploaded.
+1. Run the following command to pull a connection string that will work locally:
 
-Keep in mind some caveats before going to production.  This is currently outside the scope of this guide but may be added in the future:
+      ```
+      cd ../
+      scripts/env_pull.sh
+      ```
 
-- You will need to add SSL, and change listener to port 443
-- You will need to configure [CDN](https://aws.amazon.com/cloudfront/) and [DNS](https://aws.amazon.com/route53/) with CloudFront and Route53, respectively.
-- Database access is open-internet. You will want to switch to a private VPC and access locally/pipeline via a tunnel (usually [AWS SSM](https://docs.aws.amazon.com/systems-manager/)).
-- NextJS cache is not persistent across deploys. This likely could be solved with a volume mount, but does not have a significant impact for many new applications, so it's not covered here.
+      This will go into your `.env.production` file. This file is `.gitignore`d so that you don't accidentally check in your production credentials
 
-### 3: Deployment Pipeline
+2. Apply database migrations by running the following:
+
+      ```
+      pnpm dotenvx run --env-file=.env.production -- npx prisma migrate deploy
+      ```
+
+      You should see output similar to the following:
+
+      ```
+         Environment variables loaded from .env
+      Prisma schema loaded from prisma/schema.prisma
+      Datasource "db": PostgreSQL database "blog", schema "public" at "<hostname>:5432"
+
+      3 migrations found in prisma/migrations
+
+      Applying migration `20241107213027_init`
+      Applying migration `20241108020540_more_fields`
+      Applying migration `20241108033315_rename_thumbnail2_cover_image`
+
+      The following migration(s) have been applied:
+
+      migrations/
+      └─ 20241107213027_init/
+         └─ migration.sql
+      └─ 20241108020540_more_fields/
+         └─ migration.sql
+      └─ 20241108033315_rename_thumbnail2_cover_image/
+         └─ migration.sql
+            
+      All migrations have been successfully applied.
+      ```
+
+3. Try running your local app against the new database:
+
+   ```
+   pnpm dotenvx run --env-file=.env.production -- pnpm dev
+   ```
+
+   It should behave the same as before; i.e. creating, editing, listing, and viewing posts still works.
+
+### 4. Deploy the App
+
+Now we are going to deploy the app to AWS as an ECS Fargate service. Fargate offers a way to run containers without an underlying Virtual Machine. This cuts down on the maintenance of a VM, as well as increases the scalability of the service.
+
+1. First, run this command to turn off "init" mode for our Pulumi stack:
+
+      ```bash
+      cd pulumi
+      pulumi config set init false 
+      pulumi up
+      ```
+
+2. This should build and push a Docker image, and create a service in Fargate. Once everything is deployed, you can visit the `appURL` output from Pulumi to try it out!
+
+3. To update your service, edit some files, and then `cd pulumi && pulumi up`. The Docker container will automatically be rebuilt and deployed over the existing version.
+
+
+### 5: Deployment Pipeline
 
 With the resources already in place, it's fairly straightforward to add a CI/CD pipeline that deploys updates. In this guide we will use GitHub Actions, which is built into GitHub.
 

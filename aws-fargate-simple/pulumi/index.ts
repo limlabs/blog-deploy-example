@@ -3,9 +3,6 @@ import * as aws from "@pulumi/aws";
 import * as awsx from "@pulumi/awsx";
 import * as random from "@pulumi/random";
 
-const config = new pulumi.Config();
-const init = config.getBoolean("init") ?? true;
-
 const stack = pulumi.getStack();
 
 const mediaBucket = new aws.s3.BucketV2("mediaBucket", {
@@ -34,7 +31,6 @@ new aws.s3.BucketAclV2("media", {
       mediaBucketPublicAccessBlock,
   ],
 });
-
 
 const dbPassword = new random.RandomPassword("dbPassword", {
   length: 24,
@@ -81,7 +77,7 @@ const database = new aws.rds.ClusterInstance("BlogDBInstance", {
 const postgresPrismaURL = pulumi.interpolate`postgresql://${dbCluster.masterUsername}:${dbPassword.result}@${database.endpoint}:${database.port}/${dbCluster.databaseName}`
 
 const connectionStringSecret = new aws.secretsmanager.Secret("connectionString", {
-  name: pulumi.interpolate`blog-${stack}-connectionString`
+  namePrefix: pulumi.interpolate`blog-${stack}-connectionString-`
 });
 
 new aws.secretsmanager.SecretVersion("connectionStringVersion", {
@@ -196,57 +192,56 @@ new aws.iam.RolePolicy("TaskRolePolicy", {
   }
 });
 
-if (!init) {
-  const image = new awsx.ecr.Image("image", {
-    repositoryUrl: repo.url,
-    context: "..",
-    platform: "linux/amd64"
-  });
-  
-  new awsx.ecs.FargateService("service", {
-    name: pulumi.interpolate`blog-${stack}-app`,
-    cluster: cluster.arn,
-    assignPublicIp: true,
-    loadBalancers: [{
-      containerName: "blog",
-      containerPort: 3000,
-      targetGroupArn: lb.defaultTargetGroup.arn,
-    }],
-    taskDefinitionArgs: {
-      taskRole: {
-        roleArn: taskRole.arn,
-      },
-      executionRole: {
-        roleArn: executionRole.arn,
-      },
-      container: {
-        name: "blog",
-        image: image.imageUri,
-        cpu: 256,
-        memory: 512,
-        essential: true,
-        portMappings: [{
-          hostPort: 3000,
-          containerPort: 3000,
-        }],
-        environment: [
-          {
-            name: "MEDIA_BUCKET_NAME",
-            value: mediaBucket.bucket,
-          },
-        ],
-        secrets: [
-          {
-            name: "POSTGRES_PRISMA_URL",
-            valueFrom: connectionStringSecret.arn,
-          }
-        ]
-      },
+const image = new awsx.ecr.Image("image", {
+  repositoryUrl: repo.url,
+  context: "..",
+  platform: "linux/amd64"
+});
+
+new awsx.ecs.FargateService("service", {
+  name: pulumi.interpolate`blog-${stack}-app`,
+  cluster: cluster.arn,
+  assignPublicIp: true,
+  loadBalancers: [{
+    containerName: "blog",
+    containerPort: 3000,
+    targetGroupArn: lb.defaultTargetGroup.arn,
+  }],
+  taskDefinitionArgs: {
+    taskRole: {
+      roleArn: taskRole.arn,
     },
-  }, {
-    dependsOn: [executionRolePolicy, executionRolePolicyAttachment]
-  });
-}
+    executionRole: {
+      roleArn: executionRole.arn,
+    },
+    container: {
+      name: "blog",
+      image: image.imageUri,
+      cpu: 256,
+      memory: 512,
+      essential: true,
+      portMappings: [{
+        hostPort: 3000,
+        containerPort: 3000,
+      }],
+      environment: [
+        {
+          name: "MEDIA_BUCKET_NAME",
+          value: mediaBucket.bucket,
+        },
+      ],
+      secrets: [
+        {
+          name: "POSTGRES_PRISMA_URL",
+          valueFrom: connectionStringSecret.arn,
+        }
+      ]
+    },
+  },
+}, {
+  dependsOn: [executionRolePolicy, executionRolePolicyAttachment, database],
+});
+
 
 export const appURL = pulumi.interpolate`http://${lb.loadBalancer.dnsName}`;
 export const connectionStringArn = connectionStringSecret.arn;
