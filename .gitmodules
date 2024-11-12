@@ -1,0 +1,3 @@
+[submodule "netlify/blog-deploy-example-netlify"]
+	path = netlify/blog-deploy-example-netlify
+	url = https://github.com/limlabs/blog-deploy-example-netlify
