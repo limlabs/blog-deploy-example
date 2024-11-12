@@ -1,36 +1,17 @@
-Steps:
+# NextJS fly.io Deployment Example
 
-## Before Deploying
-
-1. Make sure you have the output set up as `standalone` in your `next.config.js`:
-
-    ```typescript
-    import type { NextConfig } from "next";
-
-    const nextConfig: NextConfig = {
-      /* config options here */
-      output: "standalone",
-      experimental: {
-        serverActions: {
-          bodySizeLimit: "5mb",
-        },
-      },
-    };
-
-    export default nextConfig;
-    ```
-
-    If you're cloning the example, this should already be set up for you.
+This example shows how to create a simple blog with Postgres and Object Storage for uploads using fly.io and Tigris.
 
 ## 1. Deploy the app
 
+1. Clone this repo
 1. Install the fly cli (`brew install flyctl` on macOS)
-2. Run `flyctl login` if you have an account, `flyctl signup` if you need to create one
-3. Run `fly launch` and pick the defaults
-4. Once you deploy, you can visit the URL given by `flyctl`. 
+1. In a new terminal, run `flyctl login` if you have an account, `flyctl signup` if you need to create one
+1. Make sure you are in the example directory `cd fly.io`
+1. Run `fly launch` and pick the defaults
+1. Once you deploy, you can visit the URL given by `flyctl`. 
 
 Everything should _almost_ work. However, you'll notice that images aren't displaying though. Let's fix that!
-
 
 ## 2. Allow public access to uploads
 
