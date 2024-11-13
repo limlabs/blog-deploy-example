@@ -5,6 +5,11 @@ import * as random from "@pulumi/random";
 
 const stack = pulumi.getStack();
 
+const suffix = new random.RandomString("suffix", {
+  length: 6,
+  special: false,
+});
+
 const vpc = new awsx.ec2.Vpc(`blog-${stack}-vpc`, {
   enableDnsHostnames: true,
   enableDnsSupport: true,
@@ -22,30 +27,7 @@ const vpc = new awsx.ec2.Vpc(`blog-${stack}-vpc`, {
 });
 
 const mediaBucket = new aws.s3.BucketV2("mediaBucket", {
-  bucketPrefix: pulumi.interpolate`blog-${stack}-media`, 
-});
-
-const mediaBucketOwnershipControls = new aws.s3.BucketOwnershipControls("media", {
-  bucket: mediaBucket.id,
-  rule: {
-      objectOwnership: "BucketOwnerPreferred",
-  },
-});
-const mediaBucketPublicAccessBlock = new aws.s3.BucketPublicAccessBlock("media", {
-  bucket: mediaBucket.id,
-  blockPublicAcls: false,
-  blockPublicPolicy: false,
-  ignorePublicAcls: false,
-  restrictPublicBuckets: false,
-});
-new aws.s3.BucketAclV2("media", {
-  bucket: mediaBucket.id,
-  acl: "public-read",
-}, {
-  dependsOn: [
-      mediaBucketOwnershipControls,
-      mediaBucketPublicAccessBlock,
-  ],
+  bucketPrefix: pulumi.interpolate`blog-${stack}-media`,
 });
 
 const dbPassword = new random.RandomPassword("dbPassword", {
@@ -154,6 +136,93 @@ const lb = new awsx.lb.ApplicationLoadBalancer("lb", {
   },
 });
 
+const oai = new aws.cloudfront.OriginAccessIdentity(`blog-${stack}-${suffix}`, {
+  comment: "OAI for CloudFront distribution to access S3 bucket",
+});
+
+new aws.s3.BucketPolicy("mediaBucketPolicy", {
+  bucket: mediaBucket.id,
+  policy: pulumi.all([mediaBucket.arn, oai.iamArn]).apply(([mediaArn, iamArn]) => JSON.stringify({
+    Version: "2012-10-17",
+    Statement: [
+      {
+        Effect: "Allow",
+        Principal: {
+          AWS: iamArn,
+        },
+        Action: ["s3:GetObject"],
+        Resource: `${mediaArn}/*`,
+      },
+    ],
+  })),
+});
+
+
+const distribution = new aws.cloudfront.Distribution(`blog-${stack}-distribution`, {
+  enabled: true,
+  origins: [
+    {
+      domainName: lb.loadBalancer.dnsName,
+      originId: `blog-${stack}-origin`,
+      customOriginConfig: {
+        originProtocolPolicy: "http-only",  // Ensures CloudFront communicates with ALB over HTTPS
+        httpPort: 80,
+        httpsPort: 443,
+        originSslProtocols: ["TLSv1.2"],
+      },
+    },
+    {
+      domainName: mediaBucket.bucketRegionalDomainName,
+      originId: `blog-${stack}-media-origin`,
+      s3OriginConfig: {
+        originAccessIdentity: oai.cloudfrontAccessIdentityPath,  // Restrict access to the bucket
+      },
+    }
+  ],
+  orderedCacheBehaviors: [
+    {
+      pathPattern: "/media/*",
+      targetOriginId: `blog-${stack}-media-origin`,
+      allowedMethods: ["GET", "HEAD", "OPTIONS"],
+      cachedMethods: ["GET", "HEAD"],
+      compress: true,
+      
+      viewerProtocolPolicy: "redirect-to-https",
+      forwardedValues: {
+        headers: [],
+        queryStringCacheKeys: [],
+        queryString: false,
+        cookies: {
+          forward: "none"
+        },
+      },
+    }
+  ],
+  defaultCacheBehavior: {
+    targetOriginId: `blog-${stack}-origin`,
+    viewerProtocolPolicy: "redirect-to-https",  // Redirects all traffic to HTTPS
+    allowedMethods: ["GET", "HEAD", "OPTIONS", "POST", "PUT", "PATCH", "DELETE"],
+    cachedMethods: ["GET", "HEAD"],
+    compress: true,
+    forwardedValues: {
+      queryString: true,
+      headers: ["*"],
+      cookies: {
+        forward: "all"
+      }
+    },
+  },
+  priceClass: "PriceClass_100",  // Adjust based on your preferred CloudFront regions
+  viewerCertificate: {
+    cloudfrontDefaultCertificate: true,  // Use the default CloudFront certificate for SSL
+  },
+  restrictions: {
+    geoRestriction: {
+      restrictionType: "none",
+    },
+  },
+});
+
 new aws.s3.BucketCorsConfigurationV2("media", {
   bucket: mediaBucket.id,
   corsRules: [
@@ -243,6 +312,9 @@ new aws.iam.RolePolicy("TaskRolePolicy", {
 const image = new awsx.ecr.Image("image", {
   repositoryUrl: repo.url,
   context: "..",
+  args: {
+    INPUT_CDN_URL: pulumi.interpolate`https://${distribution.domainName}`,
+  },
   platform: "linux/amd64"
 });
 
@@ -301,6 +373,10 @@ new awsx.ecs.FargateService("service", {
           name: "MEDIA_BUCKET_NAME",
           value: mediaBucket.bucket,
         },
+        {
+          name: "CDN_URL",
+          value: pulumi.interpolate`https://${distribution.domainName}`,
+        }
       ],
       secrets: [
         {
@@ -315,7 +391,7 @@ new awsx.ecs.FargateService("service", {
 });
 
 
-export const appURL = pulumi.interpolate`http://${lb.loadBalancer.dnsName}`;
+export const appURL = pulumi.interpolate`https://${distribution.domainName}`;
 export const connectionStringArn = connectionStringSecret.arn;
 export const dbEndpoint = database.endpoint;
 export const mediaBucketName = mediaBucket.bucket;

@@ -22,17 +22,17 @@ const localStorageProvider: MediaStorageProvider = {
 const blobStorageProvider: MediaStorageProvider = {
   upload: async function (destinationPath: string, data: Buffer) {
     const s3 = new S3Client({});
+    const key = `media/${destinationPath}`;
 
     // Upload the image data to the S3 bucket
     await s3.send(new PutObjectCommand({
       Bucket: process.env.MEDIA_BUCKET_NAME,
-      Key: destinationPath,
+      Key: key,
       Body: data,
-      ACL: "public-read",
     }));
 
     return {
-      url: `https://${process.env.MEDIA_BUCKET_NAME}.s3.amazonaws.com/${destinationPath}`,
+      url: `${process.env.CDN_URL}/${key}`,
     };
   },
 };

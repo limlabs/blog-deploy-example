@@ -12,7 +12,7 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: "https",
-        hostname: '*.s3.amazonaws.com',
+        hostname: new URL(process.env.CDN_URL ?? 'http://localhost:3000').hostname,
         port: "",
         pathname: "/**",
       }

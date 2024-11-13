@@ -1,6 +1,6 @@
 # syntax=docker.io/docker/dockerfile:1
-
 FROM node:18-alpine AS base
+ARG INPUT_CDN_URL
 
 # Install dependencies only when needed
 FROM base AS deps
@@ -20,6 +20,8 @@ RUN \
 
 # Rebuild the source code only when needed
 FROM base AS builder
+
+ENV CDN_URL=${INPUT_CDN_URL}
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
